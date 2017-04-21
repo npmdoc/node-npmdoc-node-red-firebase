@@ -1,0 +1,438 @@
+<html><head></head><body><div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a href="https://github.com/yieme/node-red-firebase">node-red-firebase (v0.1.0)</a>
+</h1>
+<h4>Check it out! Now you can access your Firebase data with Node-RED! This allows you to automate Firebase data manipulation or generate custom events based on what's going on with your data store.</h4>
+<div class="apidocSectionDiv"><a href="#apidoc.tableOfContents" id="apidoc.tableOfContents"><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.node-red-firebase">module node-red-firebase</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-red-firebase.node-red-firebase">
+            function <span class="apidocSignatureSpan"></span>node-red-firebase
+            <span class="apidocSignatureSpan">(RED)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">node-red-firebase.</span>status</span>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.node-red-firebase.status">module node-red-firebase.status</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-red-firebase.status.addListener">
+            function <span class="apidocSignatureSpan">node-red-firebase.status.</span>addListener
+            <span class="apidocSignatureSpan">(node)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-red-firebase.status.checkStatus">
+            function <span class="apidocSignatureSpan">node-red-firebase.status.</span>checkStatus
+            <span class="apidocSignatureSpan">(node)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-red-firebase.status.connected">
+            function <span class="apidocSignatureSpan">node-red-firebase.status.</span>connected
+            <span class="apidocSignatureSpan">(node)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-red-firebase.status.connecting">
+            function <span class="apidocSignatureSpan">node-red-firebase.status.</span>connecting
+            <span class="apidocSignatureSpan">(node)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-red-firebase.status.error">
+            function <span class="apidocSignatureSpan">node-red-firebase.status.</span>error
+            <span class="apidocSignatureSpan">(node, msg)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-red-firebase.status.offline">
+            function <span class="apidocSignatureSpan">node-red-firebase.status.</span>offline
+            <span class="apidocSignatureSpan">(node)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.node-red-firebase" id="apidoc.module.node-red-firebase">module node-red-firebase</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.node-red-firebase.node-red-firebase" id="apidoc.element.node-red-firebase.node-red-firebase">
+        function <span class="apidocSignatureSpan"></span>node-red-firebase
+        <span class="apidocSignatureSpan">(RED)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">node-red-firebase = function (RED) {
+    'use strict';
+
+    function sendMessageFromSnapshot(msg, snapshot) {
+        msg.href = snapshot.ref().toString();
+        msg.payload = snapshot.val();
+        this.send(msg);
+    }
+
+    function FirebaseQuery(n) {
+        var Firebase = require('firebase'),
+            firebaseStatus = require('./utility/status');
+
+        RED.nodes.createNode(this, n);
+
+        this.child = n.child;
+        this.credentials = RED.nodes.getNode(n.firebaselogin).credentials;
+        this.firebasepath = n.firebasepath;
+
+        // Status
+        firebaseStatus.connecting(this);
+
+        // Check credentials
+        if (!this.credentials.appid) {
+            firebaseStatus.error(this, 'Check credentials! (Query)');
+        } else {
+            this.firebaseurl = 'https://' + this.credentials.appid + '.firebaseio.com/' + this.firebasepath;
+            this.firebase = new Firebase(this.firebaseurl);
+
+            // Status
+            firebaseStatus.checkStatus(this);
+
+            // Add listener
+            this.on('input', function (msg) {
+                var childpath = (this.child) ? String(msg[this.child]) : ''; // get path from msg or default to
+                childpath = (childpath.indexOf('/') == 0) ? childpath : '/' + childpath; // make sure the path starts with
+                this.firebase.child(childpath).once('value', sendMessageFromSnapshot.bind(this, msg));
+            });
+        }
+    }
+
+    RED.nodes.registerType('firebase query', FirebaseQuery);
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.node-red-firebase.status" id="apidoc.module.node-red-firebase.status">module node-red-firebase.status</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.node-red-firebase.status.addListener" id="apidoc.element.node-red-firebase.status.addListener">
+        function <span class="apidocSignatureSpan">node-red-firebase.status.</span>addListener
+        <span class="apidocSignatureSpan">(node)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">addListener = function (node) {
+
+    var self = this;
+
+    global.refFirebase.onAuth(function(authData) {
+        if (authData) {
+            self.connected(node);
+        } else {
+            self.error(node);
+        }
+    });
+
+    global.refFirebase.offAuth(function(authData) {
+        if (authData) {
+            self.connected(node);
+        } else {
+            self.offline(node);
+        }
+    });
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.node-red-firebase.status.checkStatus" id="apidoc.element.node-red-firebase.status.checkStatus">
+        function <span class="apidocSignatureSpan">node-red-firebase.status.</span>checkStatus
+        <span class="apidocSignatureSpan">(node)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">checkStatus = function (node) {
+
+    var authData,
+        self = this;
+
+    node.firebase.onAuth(function(authData) {
+        if (authData) {
+            self.connected(node);
+        } else {
+            self.error(node);
+        }
+    });
+
+    node.firebase.offAuth(function(authData) {
+        if (authData) {
+            self.connected(node);
+        } else {
+            self.offline(node);
+        }
+    });
+
+    authData = node.firebase.getAuth();
+    if (authData) {
+        self.connected(node);
+    } else {
+        self.offline(node);
+    }
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+        if (!this.credentials.appid) {
+firebaseStatus.error(this, 'Check credentials! (Query)');
+        } else {
+this.firebaseurl = 'https://' + this.credentials.appid + '.firebaseio.com/' + this.firebasepath;
+this.firebase = new Firebase(this.firebaseurl);
+
+// Status
+firebaseStatus.<span class="apidocCodeKeywordSpan">checkStatus</span>(this);
+
+// Add listener
+this.on('input', function (msg) {
+    var childpath = (this.child) ? String(msg[this.child]) : ''; // get path from msg or default to
+    childpath = (childpath.indexOf('/') == 0) ? childpath : '/' + childpath; // make sure the path starts with
+    this.firebase.child(childpath).once('value', sendMessageFromSnapshot.bind(this, msg));
+});
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.node-red-firebase.status.connected" id="apidoc.element.node-red-firebase.status.connected">
+        function <span class="apidocSignatureSpan">node-red-firebase.status.</span>connected
+        <span class="apidocSignatureSpan">(node)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">connected = function (node) {
+    node.status({
+            fill: 'green',
+            shape: 'dot',
+            text: 'connected'
+        }
+    );
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+     */
+    addListener: function (node) {
+
+var self = this;
+
+global.refFirebase.onAuth(function(authData) {
+    if (authData) {
+        self.<span class="apidocCodeKeywordSpan">connected</span>(node);
+    } else {
+        self.error(node);
+    }
+});
+
+global.refFirebase.offAuth(function(authData) {
+    if (authData) {
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.node-red-firebase.status.connecting" id="apidoc.element.node-red-firebase.status.connecting">
+        function <span class="apidocSignatureSpan">node-red-firebase.status.</span>connecting
+        <span class="apidocSignatureSpan">(node)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">connecting = function (node) {
+    node.status({
+            fill: 'grey',
+            shape: 'ring',
+            text: 'connecting'
+        }
+    );
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+RED.nodes.createNode(this, n);
+
+this.child = n.child;
+this.credentials = RED.nodes.getNode(n.firebaselogin).credentials;
+this.firebasepath = n.firebasepath;
+
+// Status
+firebaseStatus.<span class="apidocCodeKeywordSpan">connecting</span>(this);
+
+// Check credentials
+if (!this.credentials.appid) {
+    firebaseStatus.error(this, 'Check credentials! (Query)');
+} else {
+    this.firebaseurl = 'https://' + this.credentials.appid + '.firebaseio.com/' + this.firebasepath;
+    this.firebase = new Firebase(this.firebaseurl);
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.node-red-firebase.status.error" id="apidoc.element.node-red-firebase.status.error">
+        function <span class="apidocSignatureSpan">node-red-firebase.status.</span>error
+        <span class="apidocSignatureSpan">(node, msg)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">error = function (node, msg) {
+    node.status({
+            fill: 'red',
+            shape: 'ring',
+            text: msg || 'connection failed'
+        }
+    );
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+        this.firebasepath = n.firebasepath;
+
+        // Status
+        firebaseStatus.connecting(this);
+
+        // Check credentials
+        if (!this.credentials.appid) {
+firebaseStatus.<span class="apidocCodeKeywordSpan">error</span>(this, 'Check credentials! (Query)');
+        } else {
+this.firebaseurl = 'https://' + this.credentials.appid + '.firebaseio.com/' + this.firebasepath;
+this.firebase = new Firebase(this.firebaseurl);
+
+// Status
+firebaseStatus.checkStatus(this);
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.node-red-firebase.status.offline" id="apidoc.element.node-red-firebase.status.offline">
+        function <span class="apidocSignatureSpan">node-red-firebase.status.</span>offline
+        <span class="apidocSignatureSpan">(node)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">offline = function (node) {
+    node.status({
+            fill: 'gray',
+            shape: 'ring',
+            text: 'disconnected'
+        }
+    );
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+        }
+    });
+
+    global.refFirebase.offAuth(function(authData) {
+        if (authData) {
+            self.connected(node);
+        } else {
+            self.<span class="apidocCodeKeywordSpan">offline</span>(node);
+        }
+    });
+},
+
+/**
+ * AddEventListener
+ *
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
+</body></html>
